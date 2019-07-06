@@ -1,0 +1,95 @@
+Ansible Supports different kinds of Modules e.g. file,copy,ping,service etc which is used as command.
+ansible all -i hosts -m ping ---> -m denotes module and we used it as command to acheive the objective.
+
+Example of Ansible Modules
+===========================
+1. Ping Module:
+   ansible all -i hosts -m ping
+
+2. setup Module: it's similar to "ohio in chef" & "factor in Puppet". setup modules collects the information about target linux system.
+   ansible all -i hosts -m setup
+   
+Grouping in inventory file "hosts" and global ansible hosts file
+==============================================================
+*** Here our inventory file i.e. "hosts" is created locally under (/ansible/hosts) which contains the IP of all the VMs. Suppose If we want to run  ansible operation against, only particular host, not against all the hosts, just change the inventory file i.e. hosts
+   cd ansible
+   vi hosts --> remove ip & add like below
+   web ansible_ssh_host=192.168.33.20
+   db  ansible_ssh_host=192.168.33.30
+   
+   And then run
+   ansible web -i hosts -m ping --> we are running ping module only for web 
+   ansible db  -i hosts -m ping --> we are running ping module only for db
+   ansible web -i hosts -m setup --> we are running setup module only for web
+   ansible db  -i hosts -m setup --> we are running setup module only for db
+   
+*** Suppose if we have 3000 nodes where we want ansible operation to run to acheive our objective, add all of them in inventory file i.e. "hosts" or we can do grouping in hosts file. Another scenario, if we have diff flavours like centos, ubuntu...we will do the grouping of same flavours together in hosts file. That can also be done via yml coding of ansible.Below is the format of grouping.
+
+     [dbservers]
+     db ansible_ssh_host=192.168.33.30
+     [webservers]
+     web ansible_ssh_host=192.168.33.20
+  Suppose if we have another db server, just add that to next line under section [dbservers]. 
+
+*** Our hosts file is locally created file under "/ansible/hosts". Under "/etc/ansible/hosts", that is the main hosts file which ansible uses.we can overwrite that with a local hosts file ceated in current directory. Like we are using here under "/ansible/hosts".
+    
+      
+3. Suppose if we want to install httpd only in the VM web, run like below. yum is one of the module.
+    ansible web -i hosts -m yum -a "name=httpd state=present" or state=installed
+   To Remove httpd from web,
+    ansible web -i hosts -m yum -a "name=httpd state=absent"
+    
+    -a --> denotes argument, for module called yum, -a is the parameter. Here, we are asking ansible to run the module "yum" not the command yum, module yum will take care of dependencies.
+           
+  After installing httpd in web, we need to start httpd service also,
+   ansible web -i hosts -m service -a "name=httpd state=started" --> module service starts the httpd service
+ The general confusion arises here is, we should use "start" instead of "started". To understand it, below explanation
+  "Ansible, chef & Puppet are not the automation tools, they are nearly configuration mgmt tools.The only diff with traditional    configuration mgmt tools is that it falls under domain called "desired state configuration mgmt" and "desired state configuration mgmt" deals with your desired state.So, here we are saying my desire is that in target machine, state should be such that servive name httpd should be in started state.
+ 
+It's not automation tool which works on our command like "start". it's configuration mgmt tool which deals on "desired state configuration mgmt" so we give state as "started".
+Ansible is not automation tool. HPSA & BMC Blade logic are automation tools which works on our command.
+
+ansible webservers -i hosts -m service -a "name=httpd state=stopped" --> service module will stop httpd service for the groups [webservers] in hosts file. And here our web VM is under the group [webservers], where we have stared the httpd service.
+
+       
+4.  ansible webservers -i hosts -m file -a "dest=/opt/file1 state=touch" --> file module to create file
+    ansible webservers -i hosts -m file -a "dest=/opt/mydir1 state=directory" --> file module to create directory
+    ansible webservers -i hosts -m copy -a "src=/etc/hosts dest=/tmp/hosts" --> copy module to copy
+     
+     
+ Idempotency in Ansible
+ ============================
+ All the modules understands idempotency in Ansible except "shell". It's same like execute resource of chef it's command not the module.The only advantage to use the shell command is, if the module which we want ro run but it's not available then like chef execute we can use shell module in ansible
+ 
+ansible webservers -i hosts -m shell -a 'echo hi > /opt/hifile' --> output will be like below
+web | SUCCESS | rc=0 >> --> if we see rc=1 then command didn't run successfully
+
+After command runs it says rc=0 means return code is 0, means shell on which command runs has not returned anything, it says that command just accepted, it doesn't check whether command run or not ? so it doesn't understand what it's doing i.e. no idempotency
+it's not recommended to use it because it doesn't have visibility of output what other modules/commands have in Ansible.
+     
+     
+To Run shell script using Ansible modules
+==========================================
+Suppose if we want to run a shell script in target machine using Ansible module, we need to do two things i.e. first copy the script to target server using copy module & second is to run the script. Below is the format:
+
+    1. ansible webservers -i hosts -m copy -a "src=home/amitesh/shellscript.sh dest=/opt/shellscript.sh"  ---> to copy shellscript.sh in target webserver using copy module.
+    2. ansible webservers -i hosts -m shell -a 'bash /opt/shellscript.sh'  ---> to run the shellscript.sh in target webserver
+ 
+ 
+
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+  

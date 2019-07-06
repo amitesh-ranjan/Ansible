@@ -1,0 +1,151 @@
+standard syntax of Ansible
+===========================
+sample.yml
+---                     ----> tripple --- is just Ansible syntax, no specific meaning.
+- hosts: [target hosts] ----> it is webservers, db i.e. hosts file entry
+  remote_user: [yourname] --> remote server user name where we will perform the Ansible operations
+  tasks:
+    - [task 1] --> Module commands, [task 1] should be written exactly after 2 spaces under "tasks:" "t"
+    - [task 2] --> Module commands, [task 1] should be written exactly after 2 spaces under "tasks:" "t"
+    
+[task 1] should be written exactly after 2 spaces under "tasks:" "t" --> This comes from the python heritage of Ansibe. Python is extremely sensitive about spaces.
+spaces are very imp in Ansible and they should be in the same way as above
+we can get rid of remote_user, that doesn't matter so much. Either # it our just delete it out..
+
+---
+- hosts: [target hosts] ----> it is webservers, db i.e. hosts file entry
+  tasks:
+    - [task 1] --> Module commands
+    - [task 2] --> Module commands
+    
+1. #nano playbook1.yml ---> in Ansible we called playbook like recipes in chef. we created playbook1.yml file.
+     ---
+     - hosts: all
+       tasks:
+         - shell: touch /opt/filefromyml
+          
+          
+     we can also use file module as a task instead of shell. shell will not have idempotency feature & not recommended to use.     
+     ---
+     - hosts: all
+       tasks:
+         - file: dest=/opt/file2 state=touch
+                   
+it's the same thing which we were running as Modules, we are not just running them as a code.
+2. To run the playbook
+   ansible-playbook -i hosts playbook1.yml --> since, we are using local hosts file so "-i hosts" is manadatory
+                                                if we use global hosts file then its not required
+3. Ansible runs ony on those servers which are mentioned in hosts file.The only diff is if DNS is active we just need
+   to write hostname in hosts file otherwise we have to write like "web ansible_ssh_host=192.168.33.20"
+4. playbook2.yml
+   ---
+   - hosts: all
+     tasks:
+       - yum: name=git state=present
+[root@acs ansible]# ansible-playbook -i hosts playbook2.yml
+
+PLAY [all] *************************************************************************************************************************************************************
+
+TASK [Gathering Facts] *************************************************************************************************************************************************
+ok: [web] --> This "ok" means it maintains idempotency and the package which are trying to install exixts there.
+ok: [db]
+
+TASK [yum] *************************************************************************************************************************************************************
+changed: [web] --> This "changed" means it will installing new and doing for 1st time. After that if we run the same playbook, it will say "ok"...means it maintains
+                    the idempotencu and no changes are allowed, until done via some other playbook ansible operation.
+changed: [db]
+
+PLAY RECAP *************************************************************************************************************************************************************
+db                         : ok=2    changed=1    unreachable=0    failed=0
+web                        : ok=2    changed=1    unreachable=0    failed=0
+       
+
+
+Explanation how ansible playbook works:
+first it goes and collects information from the setup i.e. gathering facts and then accordingly do the task   
+
+sample.yml
+---                     
+- hosts: [target hosts] 
+  tasks:
+    - [task 1] 
+    - [task 2]
+
+The Logic is that Both [task1] & [task2] has to be written excatly in the same manner with -(dash). whatever we type in [task 1] should goes inside one -(dash). Like above
+in playbook2.yml , so -(dash) should no be written multiple times with multiple lines. it should be used only with multiple tasks. each -(dash) represents one particular task
+and watever the lines we write within the task written one by one beow another comes inside that one -(dash). Like below:
+
+---
+- hosts: all
+  tasks:
+    - yum: name=git state=present
+[root@acs ansible]# cat playbook3.yml
+---
+- hosts: all
+  tasks:
+    - name: This will install git package
+      yum: name=git state=present
+    - name: This will install lynx package
+      yum: name=lynx state=present
+      
+
+Below will be considered as 2 tasks
+==================================
+---
+- hosts: all
+  tasks:
+    - yum: name=git state=present
+[root@acs ansible]# cat playbook3.yml
+---
+- hosts: all
+  tasks:
+    - yum: name=git state=present
+    - yum: name=lynx state=present
+         
+
+Below is also possible --> for diff diff hosts, which performs diff operations
+================================================================================
+---
+- hosts: web
+  tasks:
+    - yum: name=git  state=present
+    - yum: name=lynx state=present
+    
+---
+- hosts: db
+  tasks:
+    - yum: name=git  state=present
+    - yum: name=lynx state=present
+    
+    
+    5. To install ntp pakage
+---
+- hosts: web
+  tasks:
+    - name: This will instal NTP package
+      yum: name:=ntp state=present
+      notify:
+        - starts NTP service
+  handlers:
+    - name: starts NTP service 
+      service:  name=ntp state=started 
+      
+enabled=yes ==>  if we want to enable chkconfig, then just in the same line service add "enabled=yes"    
+      
+handlers should be written exactly under the tasks space.
+      
+we can combine both package to install and start the service together. We use handler. we can also write service in tasks but we want after package gets installed the service starts. so, we create relationship b/w tasks and handlers. Once the task is over it should notify the handler to start the service. so, we 
+use notify to create connection b/w tasks and handlers.
+
+Also, under handlers we could have created one more task to start the service rather than using notify. we we want it to run only if package is installed.
+
+web                        : ok=3    changed=2    unreachable=0    failed=0 ==> Explanation of Ansible output
+===========================================================================
+ok=3 means, it runs three things i.e. setup, package & starts NTP out of which changed is 2. 
+
+
+In the real life implementation of Ansible, we implement ansible with git server. Instead of directly doing it in ansible system, we will have the jenkins job
+to checks out the particular directory for any new file. That directory will be a git repository and new playbook that is submitted to the git repository will
+be picked up by the ansible and run. so we use the combination of git with ansible to make it behave as a servers.so, all the developers would have the git clients
+installed, instead of doing "knife cookbook upload" they will do "git push" ond once they push the code into git, git would trigger a jenkins job and jenkins will trigger ansible for all the files that are there in that particular folder.
+whenever git has a new code , jenkins will come to know about it and it will go trigger the ansible for all those files.

@@ -1,0 +1,55 @@
+1. Create Ansible VMs (i.e. acs,web,db) using Vagrant file from github Link.
+2. Install ansible in acs VM - CentOS or Ubuntu
+3. Set root password for acs,web & db as root.
+
+Now, Add the host entry for all the VMs (i.e. db & web) in acs by creating a separate file "hosts" not /etc/hosts to allow ansible operations across all the VMs.
+
+[root@acs ~]# mkdir ansible
+              cd ansible
+[root@acs ansible]# vi hosts ----> enter the IP addr of web & db
+                    192.168.33.42
+                    192.168.33.43
+    
+After entering hosts entry check for Ansible ping (ansible operation connectivity) using below command:
+[root@acs ansible]# ansible all -i hosts -m ping -s -k -u root --> Enter password as root. If it says failed,then allow passwordless ssh authentication.
+This ping is not standard N/W Ping command. This is Ansible ping and it checks if "ansible operations" can run across all the VMs.It doesn't check the N/W connectivity.It's ansible health check command.
+
+Setting up passwordless ssh authentication
+==========================================
+
+[root@acs ansible]# ssh-copy-id root@192.168.33.42  --> to copy the public and private keys to remote system.
+                    if it says "no identity" found then create ssh key-gen with below command
+        
+[root@acs ansible]# ssh-keygen -t rsa --> to create the Public and Private keys
+                    it will ask to enter file, enter passphrase...just press enter
+
+[root@acs ansible]# ssh-copy-id root@192.168.33.42 --> now run this 
+                    root@192.168.33.42's password:
+                    Enter the root password as root.It will copy the public and private keys to remote system.
+                    It will show as permission denied (publickey,............).
+                    
+                    So, Modify the file in "vi /etc/ssh/sshd_config" in the remote system 192.168.33.42 as per below.
+                        a. PermitRootLogin yes --> enable it i.e. remove #, under #Authentication: Section
+                        b. PasswordAuthentication No --> search this line & change this line to yes, Remove "No".
+                        c. service sshd restart
+                    
+                    Now, try ssh-copy-id
+                    
+[root@acs ansible]# ssh-copy-id root@192.168.33.42 
+                    root@192.168.33.42's password:
+                    Enter the root password as root.
+
+                    [root@acs ansible]#
+                    
+Now, try to ssh to db and it will login without asking the password.
+[root@acs ansible]# ssh root@192.168.33.42
+[root@db ~]#
+It means ansible can perform the operations across the db VM. Setup the same for web VM to allow ansible operation from acs.
+
+Now, run the anisble ping command it will allow to do the ansible operartions across all the VMs.
+[root@acs ansible]# ansible all -i hosts -m ping -s -k -u root ---> it will show as SUCCESS.
+                    -i --> inventory file hosts
+                    -m --> place where we define the command ping
+                    -s --> sudo 
+                    -k --> Forcefully Ask for password
+                    -u --> for user
