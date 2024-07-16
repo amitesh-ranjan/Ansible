@@ -1,0 +1,55 @@
+1. create a vault file with password for the 1st time.
+
+ansible-vault create vault-pass.yml
+New Vault password:
+Confirm New Vault password:
+  (Remember this password)
+Enter some content in file vault-pass.yml
+
+2. then try to open it. you will see in encrypted format
+
+  [ansadmin@ansible-controller-server ~]$ cat vault-pass.yml
+$ANSIBLE_VAULT;1.1;AES256
+36316265613335643531613961613666646130333033373638653735343732656636336230613933
+3063326334313831356665623332343936636661613039380a343939323635326266306233316438
+61393331336364653365613832316435623931306436346536383466323334326138316531656634
+3362626338646366630a363738306437303334626637303331653732343137323066393034636363
+30323163303862636238313863323636313139366534373862343865366566616538
+
+To view the original content in plain text.
+ansible-vault view vault-pass.yml
+Vault password: (Enter vault password created in step1) , so those who knows that vault password (created in step1) can only view the data
+this is encripted file -> it will print the content in plain text
+
+3. To edit the file
+[ansadmin@ansible-controller-server ~]$ ansible-vault edit vault-pass.yml
+Vault password:
+
+4. To decrypt:
+[ansadmin@ansible-controller-server ~]$ ansible-vault decrypt vault-pass.yml
+Vault password:
+Decryption successful
+[ansadmin@ansible-controller-server ~]$ cat vault-pass.yml
+this is encrypted file
+
+5. To encrpt:
+[ansadmin@ansible-controller-server ~]$ vi vault-pass.yml
+[ansadmin@ansible-controller-server ~]$ cat vault-pass.yml
+Password: Ansible123 ---> Added some sensitive data in plain text
+[ansadmin@ansible-controller-server ~]$ ansible-vault encrypt vault-pass.yml --> this can encrypt that above content added in file vault-pass.yml
+New Vault password:
+Confirm New Vault password:
+Encryption successful
+[ansadmin@ansible-controller-server ~]$ cat vault-pass.yml --> It has encrypted, we can't see now in plain text
+$ANSIBLE_VAULT;1.1;AES256
+33306361626633636637653331333838656161613530623963613334633265626432356265303331
+6638633237643765373233303234343237313434303131310a306564646639633134643764336533
+36623731653933653162373531353933653930396434633434393364353731643561616630363234
+6262363035656565370a396631326163316532646566306131393932306330366436393134333162
+31386334383236383234643230326362663230633330373566663736333531633433
+[ansadmin@ansible-controller-server ~]$
+
+6. To view sensitive data in plain text
+[ansadmin@ansible-controller-server ~]$ ansible-vault view vault-pass.yml
+Vault password:
+Password: Ansible123
