@@ -31,9 +31,9 @@
   hosts: all
   become: true
   vars_files:
-    - tomcat_vars
+    - tomcat_vars.yml
 
-and create a separate file called tomcat_vars and add variable values.
+and create a separate file called "tomcat_vars.yml" and add variable values.
 tomcat_url: https://dlcdn.apache.org/tomcat/tomcat-9/v9.0.91/bin/apache-tomcat-9.0.91.tar.gz
 tomcat_package: apache-tomcat-9.0.91
 
