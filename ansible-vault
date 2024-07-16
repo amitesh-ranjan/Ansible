@@ -53,3 +53,35 @@ $ANSIBLE_VAULT;1.1;AES256
 [ansadmin@ansible-controller-server ~]$ ansible-vault view vault-pass.yml
 Vault password:
 Password: Ansible123
+
+
+Use this Playbooks
+==================
+[ansadmin@ansible-controller-server ~]$ ansible-playbook -i hosts ansible-vault.yml --ask-vault-pass
+Vault password:
+
+[ansadmin@ansible-controller-server ~]$ cat ansible-vault.yml
+---
+- name: ansible playbook to test ansible-valut
+  hosts: all
+  become: true
+  vars_files:
+    - vault-pass.yml
+
+  tasks:
+  - name: clone a repo
+    git:
+      repo: https://yankils:{{ password }}@github.com/yankils/vault.git #In GH close url we can also pass username and password
+      dest: /opt/ansadmin/test-vault # it will create a directory test-vault in target machine and clone git repo inside that
+
+[ansadmin@ansible-controller-server ~]$ cat vault-pass.yml
+$ANSIBLE_VAULT;1.1;AES256
+33306361626633636637653331333838656161613530623963613334633265626432356265303331
+6638633237643765373233303234343237313434303131310a306564646639633134643764336533
+36623731653933653162373531353933653930396434633434393364353731643561616630363234
+6262363035656565370a396631326163316532646566306131393932306330366436393134333162
+31386334383236383234643230326362663230633330373566663736333531633433
+
+[ansadmin@ansible-controller-server ~]$ ansible-vault view vault-pass.yml
+Vault password:
+Password: Ansible123
